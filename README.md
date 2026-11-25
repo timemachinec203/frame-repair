@@ -24,6 +24,20 @@ Also: long runs of repeats (pauses, loading screens) are left alone, the source 
 standard (BT.601 / BT.709) is kept, audio is copied untouched, and originals are never
 modified.
 
+## Install (no Xcode needed)
+
+1. Download `FrameRepair-<version>-macOS-universal.zip` from **Releases**.
+2. Unzip it and drag **Frame Repair** into **Applications**.
+3. Open it. macOS says it can't verify the developer, because the app is not notarized
+   by Apple. Click **Done**, then open **System Settings > Privacy & Security**, scroll
+   to "Frame Repair was blocked", click **Open Anyway** and confirm. Only needed once.
+
+   Or, in Terminal: `xattr -dr com.apple.quarantine "/Applications/Frame Repair.app"`
+
+Runs on macOS 14 or later, on Apple Silicon and Intel Macs (one Universal app).
+Everything it needs is inside: the engine, the RIFE model and the GPU shaders.
+The Intel build has been tested under Rosetta, not yet on a real Intel Mac.
+
 ## The app
 
 1. Drop clips (or a folder) onto the window. Nothing starts yet.
@@ -49,7 +63,7 @@ Other options: `--tier hq|balanced|fast`, `--codec auto|hevc|h264|prores`,
 
 ## Build
 
-Requirements: Apple Silicon Mac, macOS 14+, Xcode 15.3+ with the Metal toolchain.
+Requirements: Mac (Apple Silicon or Intel), macOS 14+, Xcode 15.3+ with the Metal toolchain.
 Xcode 26 and later ship the Metal toolchain separately:
 
 ```bash
@@ -62,6 +76,7 @@ Then:
 swift build -c release            # engine + app binaries
 swift test                        # app logic tests
 tools/make-app.sh                 # builds "Frame Repair.app", signs it for this Mac, installs to /Applications
+tools/make-app.sh --no-install --universal   # Apple Silicon + Intel build for sharing (build/Frame Repair.app)
 ```
 
 `make-app.sh` signs ad hoc, so the app runs on the Mac that built it. Another Mac needs

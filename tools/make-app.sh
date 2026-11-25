@@ -1,15 +1,25 @@
 #!/bin/zsh
 # Builds "Frame Repair.app" (self-contained: app + engine + RIFE model + shaders),
 # signs it for this Mac, and installs it to /Applications (or ~/Applications).
-# Usage: tools/make-app.sh [--no-install]
+# Usage: tools/make-app.sh [--no-install] [--universal]
+#   --universal  build for Apple Silicon and Intel Macs (for sharing)
 # Output: build/Frame Repair.app (and the installed copy).
 set -euo pipefail
 cd "${0:A:h}/.."
 ROOT="$PWD"
 VERSION="1.0.0"
 
-swift build -c release
-REL="$(swift build -c release --show-bin-path)"
+INSTALL=1; ARCHS=()
+for arg in "$@"; do
+  case "$arg" in
+    --no-install) INSTALL=0 ;;
+    --universal)  ARCHS=(--arch arm64 --arch x86_64) ;;
+    *) echo "unknown option: $arg" >&2; exit 2 ;;
+  esac
+done
+
+swift build -c release $ARCHS
+REL="$(swift build -c release $ARCHS --show-bin-path)"
 
 # Assemble outside ~/Documents: iCloud adds Finder metadata there, which code signing rejects.
 STAGE="$(mktemp -d)"
@@ -59,7 +69,11 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
 
-# Ad-hoc signature (this Mac only). Inner code first, then the app.
+# Drop debug info and local symbols: smaller, and no build-machine paths inside.
+strip -S -x "$APP/Contents/MacOS/FrameRepair" "$APP/Contents/Resources/engine/rife-repair"
+rm -f "$APP/Contents/Resources/engine/RifeMetal_RifeMetalCore.bundle/Contents/Resources/"*.air
+
+# Ad-hoc signature. Inner code first, then the app.
 xattr -cr "$APP"      # Finder info / provenance attributes on copied files block signing
 codesign --force --sign - "$APP/Contents/Resources/engine/rife-repair"
 codesign --force --sign - "$APP/Contents/Resources/engine/RifeMetal_RifeMetal.bundle"
@@ -71,7 +85,7 @@ mkdir -p "$ROOT/build"
 rm -rf "$ROOT/build/Frame Repair.app"
 ditto "$APP" "$ROOT/build/Frame Repair.app"   # copy kept with the source
 
-if [[ "${1:-}" != "--no-install" ]]; then
+if [[ $INSTALL == 1 ]]; then
   DEST="/Applications"
   [[ -w "$DEST" ]] || DEST="$HOME/Applications"
   mkdir -p "$DEST"
