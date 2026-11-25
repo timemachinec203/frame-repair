@@ -1,0 +1,12 @@
+.DS_Store
+/.build/
+/build/
+/.swiftpm/
+/samples/
+*.xcodeproj/
+xcuserdata/
+DerivedData/
+# rendered video never belongs in the repo
+*.mov
+*.mp4
+*.m4v
