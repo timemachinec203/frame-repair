@@ -10,3 +10,8 @@ DerivedData/
 *.mov
 *.mp4
 *.m4v
+# portable (Python) edition
+__pycache__/
+*.egg-info/
+/portable/.venv/
+/portable/build/

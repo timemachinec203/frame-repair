@@ -1,15 +1,17 @@
 # Frame Repair
 
 Fixes gameplay recordings where the game dropped frames, and can turn them into a
-24 fps film look with real motion blur. Runs entirely on an Apple Silicon Mac
-(Metal GPU); nothing is uploaded anywhere.
+24 fps film look with real motion blur. Runs entirely on your own computer; nothing
+is uploaded anywhere.
 
 When a game renders slower than the recorder (for example a game at 35-55 fps captured
 by OBS at 60 fps), the recorder repeats the previous frame. That shows up as judder.
 Frame Repair finds those repeated frames and rebuilds them with
 [RIFE](https://github.com/hzwer/Practical-RIFE) frame interpolation.
 
-It comes as a Mac app (**Frame Repair**) and a command-line engine (`rife-repair`).
+It comes as a Mac app (**Frame Repair**) with a command-line engine (`rife-repair`), and
+as a command-line edition for **Windows and Linux** (Nvidia, AMD and Intel GPUs, or any
+Intel or AMD CPU): see [portable/README.md](portable/README.md).
 
 ## What it can do
 
@@ -97,6 +99,7 @@ Sources/rife-repair/      engine: repeat detection, retime plan, RIFE, motion bl
 Sources/FrameRepairKit/   app logic without UI: settings -> arguments, presets, output parsing
 Sources/FrameRepair/      SwiftUI app; runs the bundled engine as a helper process
 Tests/                    tests for FrameRepairKit
+portable/                 Windows / Linux edition: same engine in Python + PyTorch + ffmpeg
 tools/                    app packaging and icon
 ```
 

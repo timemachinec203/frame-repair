@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "frame-repair"
+version = "1.0.0"
+description = "Fix dropped (repeated) frames in gameplay recordings with RIFE; even out timing, change frame rate, add film motion blur."
+readme = "README.md"
+requires-python = ">=3.9"
+# Install PyTorch for your GPU first (see README); this only asks for any build.
+dependencies = ["numpy>=1.22", "torch>=2.1"]
+
+[project.scripts]
+rife-repair = "frame_repair.cli:main"
+
+[tool.setuptools]
+packages = ["frame_repair"]
