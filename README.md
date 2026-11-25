@@ -36,6 +36,9 @@ modified.
 
    Or, in Terminal: `xattr -dr com.apple.quarantine "/Applications/Frame Repair.app"`
 
+Windows and Linux: download `FrameRepair-<version>-windows.zip` or `-linux.tar.gz` and
+run its installer; see [portable/README.md](portable/README.md).
+
 Runs on macOS 14 or later, on Apple Silicon and Intel Macs (one Universal app).
 Everything it needs is inside: the engine, the RIFE model and the GPU shaders.
 The Intel build has been tested under Rosetta, not yet on a real Intel Mac.

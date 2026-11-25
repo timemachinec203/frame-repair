@@ -25,7 +25,19 @@ examples:
   rife-repair clip.mov --retime                        even out timing
   rife-repair clip.mov --fps 60                        change frame rate
   rife-repair clip.mov --fps 24 --shutter 180 --codec prores   film look
+  rife-repair clip.mov --preset film                   same, saved as "clip [24fps 180deg].mov"
+
+presets (the Mac app's, with its file names):
+  film      24 fps, 180 degree shutter, ProRes      -> "clip [24fps 180deg].mov"
+  fix       replace repeated frames only            -> "clip [fixed].mov"
+  smooth60  even timing at 60 fps, ProRes           -> "clip [60fps].mov"
 """
+
+PRESETS = {
+    "film": {"fps": 24.0, "shutter": 180.0, "codec": "prores", "tag": "24fps 180deg"},
+    "fix": {"codec": "auto", "tag": "fixed"},
+    "smooth60": {"fps": 60.0, "codec": "prores", "tag": "60fps"},
+}
 
 
 def parser() -> argparse.ArgumentParser:
@@ -51,7 +63,11 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--samples", type=int,
                     help="Moments averaged per output frame with --shutter. Default: one per 1/240 s "
                          "of exposure (5 for 180 degrees at 24 fps).")
-    ap.add_argument("--codec", choices=["auto", "hevc", "h264", "prores"], default="auto",
+    ap.add_argument("--preset", choices=sorted(PRESETS),
+                    help="Use one of the Mac app's presets (see below). Other flags still override it.")
+    ap.add_argument("--tag", help='Without -o, save as "<input> [TAG].mov" next to the input, never '
+                                  'overwriting (adds " 2", " 3" ...).')
+    ap.add_argument("--codec", choices=["auto", "hevc", "h264", "prores"],
                     help="Output codec: auto (ProRes if the source is ProRes, else HEVC). Default auto.")
     ap.add_argument("--bitrate", type=float, metavar="MBPS",
                     help="Video bitrate in Mbps for hevc/h264. Default: 1.25x the source.")
@@ -93,7 +109,12 @@ def main(argv: list[str] | None = None) -> int:
     except (AttributeError, ValueError):
         pass
     try:
-        Engine(Options(**vars(args))).run()
+        opts = vars(args)
+        for key, value in PRESETS.get(opts.pop("preset") or "", {}).items():
+            if opts.get(key) is None:
+                opts[key] = value
+        opts["codec"] = opts["codec"] or "auto"
+        Engine(Options(**opts)).run()
     except (RepairError, VideoError, RuntimeError, OSError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1

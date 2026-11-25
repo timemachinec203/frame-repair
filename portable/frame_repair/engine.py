@@ -113,6 +113,7 @@ class Options:
     encoder: str | None = None
     batch: int = 8
     hwaccel: bool = True
+    tag: str | None = None
 
 
 class Engine:
@@ -139,6 +140,13 @@ class Engine:
 
         if o.output:
             out = Path(o.output).expanduser()
+        elif o.tag:
+            # Like the Mac app: "clip [24fps 180deg].mov", adding " 2", " 3" ... rather
+            # than overwriting anything.
+            base = f"{src.stem} [{o.tag}]"
+            out, n = src.with_name(base + ".mov"), 2
+            while out.exists():
+                out, n = src.with_name(f"{base} {n}.mov"), n + 1
         else:
             out = src.with_name(f"{src.stem}-repaired{src.suffix or '.mov'}")
         if out.exists():

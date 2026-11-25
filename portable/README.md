@@ -15,7 +15,21 @@ Same flags, same output files and the same results as the Mac engine. Frame dete
 and the retime plan are line-for-line ports, and the RIFE model matches the official
 reference frame at 51.7 dB.
 
-## Install
+## Download (easiest)
+
+From **Releases**:
+
+- **Windows**: `FrameRepair-<version>-windows.zip`. Unzip, double-click **Install** (it gets
+  Python, ffmpeg and the right PyTorch for your graphics card), then drag clips onto
+  **Analyze**, **Film look (24 fps)**, **Fix dropped frames** or **Smooth 60 fps**.
+- **Linux**: `FrameRepair-<version>-linux.tar.gz`. Unpack, run `./install.sh`, then
+  `./rife-repair clip.mov --preset film`.
+
+Nothing is compiled, so the same download works on any x86-64 or ARM machine. The
+installer picks CUDA, ROCm, XPU or CPU PyTorch from the graphics card it finds (force
+one with `--gpu nvidia|amd|intel|cpu`).
+
+## Install from source
 
 1. **Python 3.9 or newer**: python.org, or `winget install Python.Python.3.12` on Windows.
 2. **ffmpeg** on your PATH:
@@ -61,6 +75,15 @@ rife-repair clip.mov --fps 60                        # change frame rate
 rife-repair clip.mov --fps 24 --shutter 180 --codec prores   # film look
 ```
 
+Presets match the Mac app, including its file names (saved next to the input, never
+overwriting):
+
+| Preset | Does | Saved as |
+|---|---|---|
+| `--preset film` | 24 fps, 180° shutter motion blur, ProRes | `clip [24fps 180deg].mov` |
+| `--preset fix` | replaces only the repeated frames | `clip [fixed].mov` |
+| `--preset smooth60` | even timing on a 60 fps grid, ProRes | `clip [60fps].mov` |
+
 The startup lines say which GPU and video encoder it picked:
 
 ```
@@ -99,8 +122,9 @@ prints how long each stage took.
 - Not yet run on Nvidia, AMD or Intel GPUs, or on Windows or Linux. Those code paths
   are standard PyTorch and ffmpeg, but treat the first runs there as a test.
 
-## Tests
+## Tests and release builds
 
 ```bash
 python -m unittest discover -s tests
+python release/build.py OUT_DIR       # Windows .zip + Linux .tar.gz (reproducible)
 ```

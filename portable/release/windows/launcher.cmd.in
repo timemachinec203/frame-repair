@@ -1,0 +1,19 @@
+@echo off
+setlocal
+title Frame Repair: @TITLE@
+call "%~dp0app\tools\env.cmd" || goto :end
+if not "%~1"=="" goto :next
+echo Drag one or more video clips onto this file.
+echo.
+echo @TITLE@: @HELP@
+goto :end
+:next
+if "%~1"=="" goto :end
+echo.
+echo ==== %~nx1
+"%FR_PY%" -m frame_repair "%~1" @ARGS@
+shift
+goto :next
+:end
+echo.
+pause

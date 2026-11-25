@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Frame Repair launcher: ./rife-repair clip.mov [options]   (--help for all options)
+set -euo pipefail
+here="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+if [ ! -x "$here/app/.venv/bin/python" ]; then
+  echo "Frame Repair isn't set up yet: run ./install.sh first." >&2
+  exit 1
+fi
+[ -f "$here/app/settings.sh" ] && . "$here/app/settings.sh"
+export PYTHONPATH="$here/app${PYTHONPATH:+:$PYTHONPATH}"
+export FRAME_REPAIR_WEIGHTS="${FRAME_REPAIR_WEIGHTS:-$here/app/weights/rife-v4.25.rmw}"
+exec "$here/app/.venv/bin/python" -m frame_repair "$@"
