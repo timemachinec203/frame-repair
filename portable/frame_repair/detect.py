@@ -25,9 +25,15 @@ class Differ:
         clen = np.diff(np.r_[self.cstart, len(xs)])
         self.counts = (rlen[:, None] * clen[None, :] * 3).astype(np.float64)
 
+        self.cstart3 = self.cstart * 3
+
     def __call__(self, a: np.ndarray, b: np.ndarray) -> float:
         s = self.step
-        sa = a[::s, ::s].astype(np.int16)
-        d = np.abs(sa - b[::s, ::s]).sum(axis=2, dtype=np.int32)
-        cells = np.add.reduceat(np.add.reduceat(d, self.rstart, axis=0), self.cstart, axis=1)
+        d = a[::s, ::s].astype(np.int16)
+        d -= b[::s, ::s]
+        np.abs(d, out=d)
+        # Rows x (columns * RGB): a cell's three channels sit side by side, so the
+        # per-cell sums need no separate channel sum. Integer sums, so exact.
+        d = d.reshape(d.shape[0], -1)
+        cells = np.add.reduceat(np.add.reduceat(d, self.rstart, axis=0, dtype=np.int32), self.cstart3, axis=1)
         return float((cells / self.counts).max())

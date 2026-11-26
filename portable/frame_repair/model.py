@@ -69,8 +69,12 @@ class IFBlock(nn.Module):
         self.convblock = nn.Sequential(*[ResConv(c) for _ in range(8)])
         self.lastconv = nn.Sequential(nn.ConvTranspose2d(c, 4 * 13, 4, 2, 1), nn.PixelShuffle(2))
 
+    @staticmethod
+    def shrink(x: torch.Tensor, scale: float) -> torch.Tensor:
+        return F.interpolate(x, scale_factor=1.0 / scale, mode="bilinear", align_corners=False)
+
     def forward(self, x, flow=None, scale: float = 1.0):
-        x = F.interpolate(x, scale_factor=1.0 / scale, mode="bilinear", align_corners=False)
+        """x: the block's inputs, already shrunk by `scale` (see IFNet.forward)."""
         if flow is not None:
             flow = F.interpolate(flow, scale_factor=1.0 / scale, mode="bilinear", align_corners=False) / scale
             x = torch.cat((x, flow), 1)
@@ -109,18 +113,29 @@ class IFNet(nn.Module):
         self.encode = Head()
 
     def forward(self, img0, img1, f0, f1, timestep, scale_list):
-        """img*: [N,3,H,W] in 0..1, f*: encoder features [N,4,H,W], timestep: [N,1,H,W]."""
+        """img*: [N,3,H,W] in 0..1, f*: encoder features [N,4,H,W], timestep: [N,1,H,W].
+        img* and f* may be one frame expanded over the batch (all timesteps of one pair).
+
+        Each block shrinks its inputs by up to 32x first. Bilinear resizing works per
+        channel, so shrinking every input separately and joining the small results gives
+        the same numbers as joining at full size and then shrinking, without building
+        a full-size 24-channel tensor per block (that join was ~30% of the GPU time)."""
         blocks = [self.block0, self.block1, self.block2, self.block3, self.block4]
+        n = timestep.shape[0]
         flow = mask = feat = None
         w0, w1 = img0, img1
         for i, block in enumerate(blocks):
+            s = scale_list[i]
+            shrink = block.shrink
             if flow is None:
-                flow, mask, feat = block(torch.cat((img0, img1, f0, f1, timestep), 1), None, scale=scale_list[i])
+                # Same for every timestep of the pair: shrink one copy, then expand.
+                same = [shrink(t[:1], s).expand(n, -1, -1, -1) for t in (img0, img1, f0, f1)]
+                flow, mask, feat = block(torch.cat(same + [shrink(timestep, s)], 1), None, scale=s)
             else:
                 wf0 = warp(f0, flow[:, :2])
                 wf1 = warp(f1, flow[:, 2:4])
-                fd, mask, feat = block(torch.cat((w0, w1, wf0, wf1, timestep, mask, feat), 1), flow,
-                                       scale=scale_list[i])
+                x = torch.cat([shrink(t, s) for t in (w0, w1, wf0, wf1, timestep, mask, feat)], 1)
+                fd, mask, feat = block(x, flow, scale=s)
                 flow = flow + fd
             w0 = warp(img0, flow[:, :2])
             w1 = warp(img1, flow[:, 2:4])
@@ -228,8 +243,15 @@ class Interpolator:
         self.net = net.to(device=device, dtype=self.dtype).eval()
         self.channels_last = device.type == "cuda"
         if self.channels_last:                      # faster convolutions on tensor cores
-            torch.backends.cudnn.benchmark = True
             self.net = self.net.to(memory_format=torch.channels_last)
+        self.autotune(False)
+
+    def autotune(self, on: bool) -> None:
+        """cuDNN benchmark mode: times every convolution algorithm on the first call with
+        each new batch size (~0.5 s each at 1440p on an RTX 5070 Ti), then runs ~7%
+        faster. Worth it only for long jobs; the engine turns it on for those."""
+        if self.device.type == "cuda":
+            torch.backends.cudnn.benchmark = on
         self._feat: dict[int, tuple[torch.Tensor, torch.Tensor]] = {}   # key -> (padded img, features)
 
     @torch.inference_mode()
@@ -269,6 +291,16 @@ class Interpolator:
                            f0.expand(n, -1, -1, -1), f1.expand(n, -1, -1, -1), ts, self.scale_list)
             outs.append(out[:, :, :h, :w].clamp(0, 1).mul(255).round().to(torch.uint8).permute(0, 2, 3, 1))
         return outs[0] if len(outs) == 1 else torch.cat(outs)
+
+    def to_host(self, t: torch.Tensor) -> np.ndarray:
+        """A device tensor as a numpy array. On CUDA the copy lands in pinned (page-locked)
+        memory, about twice as fast as .cpu(). Each call gets its own buffer, so arrays
+        still waiting in the encoder's queue are never overwritten."""
+        if self.device.type != "cuda":
+            return t.cpu().numpy()
+        out = torch.empty(t.shape, dtype=t.dtype, pin_memory=True)
+        out.copy_(t)
+        return out.numpy()
 
     def upload(self, frame: np.ndarray) -> torch.Tensor:
         """A uint8 HxWx3 frame as a tensor on the device (for motion-blur averaging)."""

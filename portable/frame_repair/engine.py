@@ -22,6 +22,10 @@ class RepairError(RuntimeError):
     pass
 
 
+# RIFE frames from which cuDNN autotuning (a few seconds up front, ~7% faster after) pays off.
+AUTOTUNE_FRAMES = 2000
+
+
 def fmt_time(s: float) -> str:
     s = max(0.0, s)
     return f"{int(s) // 60}:{int(s) % 60:02d}.{int((s - math.floor(s)) * 1000):03d}"
@@ -178,6 +182,8 @@ class Engine:
 
         plan: RetimePlan | None = None
         out_rate = p.rate
+        # Fill mode doesn't know in advance; typically ~10% of frames are repeats.
+        rife.autotune(p.est_frames // 10 >= AUTOTUNE_FRAMES)
         if use_retime:
             print("Pass 1/2: finding real game frames ...")
             with Clock("pass 1 scan"):
@@ -186,6 +192,7 @@ class Engine:
             plan = build_retime_plan(pts, unique, max_gap=o.max_gap, smooth=o.smooth, out_rate=target,
                                      shutter=o.shutter, samples=o.samples)
             print(plan.summary)
+            rife.autotune(sum(1 for s in plan.steps if s[0] == "blend") >= AUTOTUNE_FRAMES)
             if target is not None:
                 out_rate = target
             print("Pass 2/2: rebuilding frames ...")
@@ -267,7 +274,7 @@ class Engine:
                         span = t - anchor[1]
                         steps = [(pt - anchor[1]) / span for pt in pending]
                         with Clock("rife"):
-                            frames = rife.interpolate(anchor[0], anchor[2], i, frame, steps).cpu().numpy()
+                            frames = rife.to_host(rife.interpolate(anchor[0], anchor[2], i, frame, steps))
                         for f in frames:
                             emit(f)
                         st.fixed_frames += len(pending)
@@ -336,7 +343,7 @@ class Engine:
             """frame: numpy (a real frame) or a device tensor (RIFE output)."""
             nonlocal acc, in_acc
             if plan.group == 1:
-                write(frame if isinstance(frame, np.ndarray) else frame.cpu().numpy())
+                write(frame if isinstance(frame, np.ndarray) else rife.to_host(frame))
                 return
             with Clock("blur average"):
                 t = rife.upload(frame) if isinstance(frame, np.ndarray) else frame
@@ -345,7 +352,7 @@ class Engine:
                 if in_acc < plan.group:
                     return
                 n = plan.group
-                out = torch.div(acc + n // 2, n, rounding_mode="floor").to(torch.uint8).cpu().numpy()
+                out = rife.to_host(torch.div(acc + n // 2, n, rounding_mode="floor").to(torch.uint8))
                 acc, in_acc = None, 0
             write(out)
 

@@ -113,14 +113,30 @@ prints how long each stage took.
   processed in 8-bit SDR, as on the Mac.
 - Output is constant frame rate. A variable-rate source gets its average rate.
 - For a VAAPI device other than `/dev/dri/renderD128`, set `FRAME_REPAIR_VAAPI_DEVICE`.
+- ProRes is encoded on the GPU with `prores_ks_vulkan` (ffmpeg 8 or newer) when it works,
+  else on the CPU with `prores_ks`; force one with `--encoder`. Both write ProRes 422 HQ.
+  To pick the Vulkan GPU, set `FRAME_REPAIR_VULKAN_DEVICE` to its index or part of its name.
+- cuDNN autotuning (a few seconds up front, ~7% faster RIFE after) is only turned on for
+  jobs with 2000 or more RIFE frames.
 
 ## Tested so far
 
 - Apple GPU (MPS) and the CPU path, on macOS: output matches the Mac engine, and the CPU
   and GPU paths give identical frames. Fill, retime, frame-rate change and film look were
   checked against ground truth on a simulated 45-in-60 fps recording.
-- Not yet run on Nvidia, AMD or Intel GPUs, or on Windows or Linux. Those code paths
-  are standard PyTorch and ffmpeg, but treat the first runs there as a test.
+- Windows 11 with an Nvidia RTX 5070 Ti (Ryzen 7 9800X3D, driver 621, PyTorch 2.14 cu130,
+  ffmpeg 9.1): the Windows download's installer and all four drag-and-drop launchers,
+  on 1440p60 OBS recordings. Times for an 8.8 s clip (525 frames):
+
+  | | Analyze | Fix dropped frames | Film look | Smooth 60 fps |
+  |---|---|---|---|---|
+  | Before tuning | 5.5 s | 9.5 s | 5.0 + 17.7 s | 5.0 + 20.4 s |
+  | Now | 3.5 s | 6.3 s | 3.2 + 12.9 s | 3.2 + 7.4 s |
+
+  (Retime presets: pass 1 scan + rendering.) The RIFE changes give bit-identical frames
+  to the earlier code; differences between runs (~72 dB) come from cuDNN, as before.
+- Not yet run on AMD or Intel GPUs, or on Linux. Those code paths are standard PyTorch
+  and ffmpeg, but treat the first runs there as a test.
 
 ## Tests and release builds
 

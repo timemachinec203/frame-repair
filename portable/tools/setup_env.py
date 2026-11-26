@@ -78,8 +78,9 @@ def detect_gpu(names: list[str]) -> str:
 
 
 def nvidia_driver_cuda() -> tuple[int, int] | None:
-    """Highest CUDA version the installed driver supports (from nvidia-smi)."""
-    m = re.search(r"CUDA Version:\s*(\d+)\.(\d+)", output(["nvidia-smi"]))
+    """Highest CUDA version the installed driver supports (from nvidia-smi). Older
+    drivers print "CUDA Version: 12.8", newer ones "CUDA UMD Version: 13.5"."""
+    m = re.search(r"CUDA (?:UMD )?Version:\s*(\d+)\.(\d+)", output(["nvidia-smi"]))
     return (int(m.group(1)), int(m.group(2))) if m else None
 
 
@@ -184,6 +185,8 @@ print("  RIFE runs on: " + device_label(d))
 
 
 def main() -> None:
+    # Our lines must reach the window before the output of the commands we start.
+    sys.stdout.reconfigure(line_buffering=True)
     ap = argparse.ArgumentParser()
     ap.add_argument("--gpu", choices=["auto", "nvidia", "amd", "intel", "cpu"], default="auto")
     ap.add_argument("--dry-run", action="store_true", help="Print the steps without running them.")
