@@ -11,7 +11,15 @@ Setup (once)
      PyTorch (a few GB for Nvidia), plus Python and ffmpeg if they're missing.
      If Windows SmartScreen warns about it, click "More info" > "Run anyway".
 
-Use
+The app
+  Open "Frame Repair" from the Start menu, the desktop or this folder (Install
+  makes the shortcuts). Drop clips or a folder onto the window, select them, click
+  Analyze (shows the game's real frame rate and the repeated frames), pick a look
+  (Film look, Fix dropped frames only, Smooth 60 fps, or Manual), then Process.
+  Two clips are processed at once by default. Right-click a clip to open or show
+  the result; Stop deletes unfinished files.
+
+Without the app
   Drag one or more clips onto one of these:
     Analyze               shows the game's real frame rate and how many frames repeat
     Film look (24 fps)    24 fps, 180-degree shutter motion blur, ProRes

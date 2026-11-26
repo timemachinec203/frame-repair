@@ -20,10 +20,31 @@ reference frame at 51.7 dB.
 From **Releases**:
 
 - **Windows**: `FrameRepair-<version>-windows.zip`. Unzip, double-click **Install** (it gets
-  Python, ffmpeg and the right PyTorch for your graphics card), then drag clips onto
+  Python, ffmpeg and the right PyTorch for your graphics card, and puts **Frame Repair** in
+  the Start menu, on the desktop and in the folder). Open the app, or drag clips onto
   **Analyze**, **Film look (24 fps)**, **Fix dropped frames** or **Smooth 60 fps**.
 - **Linux**: `FrameRepair-<version>-linux.tar.gz`. Unpack, run `./install.sh`, then
-  `./rife-repair clip.mov --preset film`.
+  `./frame-repair` for the app or `./rife-repair clip.mov --preset film`.
+
+## The app
+
+The same window as the Mac app ([frame_repair/gui.py](frame_repair/gui.py), Qt via PySide6):
+
+1. Drop clips (or a folder) onto the window. Nothing starts yet.
+2. Select clips, click **Analyze**: the game's real frame rate and how many frames repeat.
+3. Pick a look (**Film look**, **Fix dropped frames only**, **Smooth 60 fps**, or **Manual**
+   for every control), then **Process**.
+
+Results are saved next to the original (or in a chosen folder) with the Mac app's names.
+Two clips run at once by default: 14% faster than one after another on an RTX 5070 Ti.
+Right-click a clip to open or show the original or the result, see the log, or process it
+again. **Stop** ends the engine and its ffmpeg processes and deletes unfinished files.
+
+Each clip runs the command-line engine as a hidden child process (`--machine-progress`);
+the app's settings logic is [frame_repair/appkit.py](frame_repair/appkit.py), a port of the
+Mac app's FrameRepairKit with the same tests. From source: `pip install -e ".[app]"`, then
+`frame-repair` (or `python -m frame_repair.gui`). End-to-end check without clicking:
+`FRAME_REPAIR_SELFTEST="a.mkv|b.mkv" FRAME_REPAIR_SELFTEST_OUT=out python -m frame_repair.gui`.
 
 Nothing is compiled, so the same download works on any x86-64 or ARM machine. The
 installer picks CUDA, ROCm, XPU or CPU PyTorch from the graphics card it finds (force

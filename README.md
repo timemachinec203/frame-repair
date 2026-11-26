@@ -10,8 +10,8 @@ Frame Repair finds those repeated frames and rebuilds them with
 [RIFE](https://github.com/hzwer/Practical-RIFE) frame interpolation.
 
 It comes as a Mac app (**Frame Repair**) with a command-line engine (`rife-repair`), and
-as a command-line edition for **Windows and Linux** (Nvidia, AMD and Intel GPUs, or any
-Intel or AMD CPU): see [portable/README.md](portable/README.md).
+as an edition for **Windows and Linux** with the same app window and command line (Nvidia,
+AMD and Intel GPUs, or any Intel or AMD CPU): see [portable/README.md](portable/README.md).
 
 ## What it can do
 
@@ -37,7 +37,8 @@ modified.
    Or, in Terminal: `xattr -dr com.apple.quarantine "/Applications/Frame Repair.app"`
 
 Windows and Linux: download `FrameRepair-<version>-windows.zip` or `-linux.tar.gz` and
-run its installer; see [portable/README.md](portable/README.md).
+run its installer (on Windows it adds **Frame Repair** to the Start menu and desktop); see
+[portable/README.md](portable/README.md).
 
 Runs on macOS 14 or later, on Apple Silicon and Intel Macs (one Universal app).
 Everything it needs is inside: the engine, the RIFE model and the GPU shaders.

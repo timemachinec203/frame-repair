@@ -1,0 +1,4 @@
+# Shell scripts must keep LF line endings even in a Windows checkout (bash fails on CRLF).
+*.sh text eol=lf
+portable/release/linux/* text eol=lf
+tools/make-app.sh text eol=lf

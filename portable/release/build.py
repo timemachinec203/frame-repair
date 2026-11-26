@@ -75,7 +75,9 @@ def windows_files() -> dict[str, bytes]:
 
 def linux_files() -> dict[str, bytes]:
     lx = HERE / "linux"
-    return {name: (lx / name).read_bytes() for name in ("install.sh", "rife-repair", "README.txt")}
+    # LF only, even when built from a Windows checkout: bash fails on CRLF scripts.
+    return {name: (lx / name).read_bytes().replace(b"\r\n", b"\n")
+            for name in ("install.sh", "rife-repair", "frame-repair", "README.txt")}
 
 
 def check_clean(files: dict[str, bytes], forbid: Path) -> None:
@@ -145,7 +147,7 @@ def main() -> None:
     wzip = a.out / f"{wroot}.zip"
     ltar = a.out / f"{lroot}.tar.gz"
     write_zip(wzip, wroot, win)
-    write_tar(ltar, lroot, lin, executable={"install.sh", "rife-repair"})
+    write_tar(ltar, lroot, lin, executable={"install.sh", "rife-repair", "frame-repair"})
     for p in (wzip, ltar):
         print(f"{p}  {p.stat().st_size:,} bytes  sha256 {hashlib.sha256(p.read_bytes()).hexdigest()}")
 

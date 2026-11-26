@@ -15,7 +15,11 @@ Setup (once)
   It finds your graphics card and installs the matching PyTorch build (CUDA for
   Nvidia, ROCm for AMD, XPU for Intel Arc, or CPU). Force one with --gpu nvidia|amd|intel|cpu.
 
-Use
+The app
+  ./frame-repair                            opens the window: drop clips, Analyze, pick a look, Process
+  (Qt may need: sudo apt install libxcb-cursor0. Not yet tested on Linux.)
+
+Command line
   ./rife-repair clip.mov --dry-run          analyse: real game frame rate, repeated frames
   ./rife-repair clip.mov --preset film      24 fps, 180-degree shutter, ProRes -> "clip [24fps 180deg].mov"
   ./rife-repair clip.mov --preset fix       replace repeated frames only     -> "clip [fixed].mov"

@@ -11,8 +11,14 @@ requires-python = ">=3.9"
 # Install PyTorch for your GPU first (see README); this only asks for any build.
 dependencies = ["numpy>=1.22", "torch>=2.1"]
 
+[project.optional-dependencies]
+app = ["PySide6-Essentials>=6.5"]       # pip install -e ".[app]" for the Frame Repair window
+
 [project.scripts]
 rife-repair = "frame_repair.cli:main"
+
+[project.gui-scripts]
+frame-repair = "frame_repair.gui:main"
 
 [tool.setuptools]
 packages = ["frame_repair"]

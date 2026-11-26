@@ -38,8 +38,9 @@ echo Creating the environment in app\.venv ...
 :haveenv
 "app\.venv\Scripts\python.exe" "app\tools\setup_env.py" %* || goto :fail
 echo.
-echo Done. Drag video clips onto "Analyze", "Film look (24 fps)",
-echo "Fix dropped frames" or "Smooth 60 fps" in this folder.
+echo Done. Open "Frame Repair" from the Start menu, the desktop or this folder.
+echo Or drag video clips onto "Analyze", "Film look (24 fps)", "Fix dropped frames"
+echo or "Smooth 60 fps" in this folder.
 echo.
 pause
 exit /b 0
